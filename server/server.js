@@ -20,7 +20,8 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
-app.use(cors());
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+app.use(cors({ origin: allowedOrigin, credentials: true }));
 
 // Mount routers
 app.use('/api/auth', require('./routes/auth.routes'));
