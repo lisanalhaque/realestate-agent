@@ -1,0 +1,203 @@
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1280px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.propertyCard {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.propertyCard:hover {
+  transform: translateY(-4px);
+}
+
+.imageContainer {
+  height: 12rem;
+  background-color: var(--bg-main);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.propertyImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.propertyCard:hover .propertyImage {
+  transform: scale(1.05);
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background-color: var(--bg-main);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.statusBadge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  backdrop-filter: blur(4px);
+}
+
+.typeBadge {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  backdrop-filter: blur(4px);
+}
+
+.detailsContainer {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  background: var(--bg-main);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.locationIcon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: auto;
+}
+
+.featureItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: var(--text-dark);
+}
+
+.featureItem:nth-child(2) {
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+.featureIcon {
+  color: #94a3b8;
+}
+
+.featureValue {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.cardFooter {
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dateAdded {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.dateValue {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+/* Modal Form Styles */
+.formGrid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .formGrid { grid-template-columns: repeat(2, 1fr); }
+  .fullWidth { grid-column: span 2 / span 2; }
+}
+
+.locationGroup {
+  background: var(--bg-main);
+  padding: 1.25rem;
+  border-radius: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.locationHeader {
+  font-weight: 700;
+  color: var(--text-dark);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.locationInputs {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .locationInputs { grid-template-columns: repeat(3, 1fr); }
+  .addressInput { grid-column: span 3 / span 3; }
+}
