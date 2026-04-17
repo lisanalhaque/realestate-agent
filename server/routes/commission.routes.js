@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.get('/summary', protect, getCommissionSummary);
 router.get('/', protect, getCommissions);
-router.put('/:id/status', protect, authorize('manager', 'admin'), updateCommissionStatus);
+router.put('/:id/status', protect, authorize('admin'), updateCommissionStatus);
 
 module.exports = router;

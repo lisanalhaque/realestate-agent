@@ -1,13 +1,57 @@
 const Client = require('../models/Client');
+const Deal = require('../models/Deal');
 
-// @desc    Get all clients
+// @desc    Get all clients (with deal history for brokers)
 // @route   GET /api/clients
 // @access  Private
 const getClients = async (req, res) => {
   try {
-    const filter = req.user.role === 'agent' ? { assignedAgent: req.user._id } : {};
-    const clients = await Client.find(filter).populate('assignedAgent', 'name');
-    res.json(clients);
+    const filter = req.user.role === 'broker' ? { assignedAgent: req.user._id } : {};
+    const clients = await Client.find(filter).populate('assignedAgent', 'name').lean();
+
+    const clientIds = clients.map((c) => c._id);
+    const dealsByClient = {};
+
+    if (clientIds.length > 0) {
+      const dealFilter = { client: { $in: clientIds } };
+      if (req.user.role === 'broker') {
+        dealFilter.agent = req.user._id;
+      }
+      const deals = await Deal.find(dealFilter)
+        .populate('property', 'title')
+        .sort({ updatedAt: -1 })
+        .lean();
+
+      deals.forEach((d) => {
+        const key = d.client.toString();
+        if (!dealsByClient[key]) dealsByClient[key] = [];
+        dealsByClient[key].push({
+          _id: d._id,
+          status: d.status,
+          dealValue: d.dealValue,
+          commissionRate: d.commissionRate,
+          commissionAmount: d.commissionAmount,
+          closedAt: d.closedAt,
+          propertyTitle: d.property?.title || 'Property',
+        });
+      });
+    }
+
+    const enriched = clients.map((c) => {
+      const list = dealsByClient[c._id.toString()] || [];
+      const closed = list.filter((x) => x.status === 'closed');
+      const totalClosedValue = closed.reduce((s, x) => s + (x.dealValue || 0), 0);
+      const totalCommissionEarned = closed.reduce((s, x) => s + (x.commissionAmount || 0), 0);
+      return {
+        ...c,
+        deals: list,
+        closedDealsCount: closed.length,
+        totalClosedDealValue: totalClosedValue,
+        totalCommissionFromClosedDeals: totalCommissionEarned,
+      };
+    });
+
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -39,7 +83,7 @@ const getClientById = async (req, res) => {
     const client = await Client.findById(req.params.id).populate('assignedAgent', 'name');
     if (!client) return res.status(404).json({ message: 'Client not found' });
     
-    if (req.user.role === 'agent' && client.assignedAgent._id.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'broker' && client.assignedAgent._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to view this client' });
     }
     
@@ -57,7 +101,7 @@ const updateClient = async (req, res) => {
     const client = await Client.findById(req.params.id);
     if (!client) return res.status(404).json({ message: 'Client not found' });
 
-    if (req.user.role === 'agent' && client.assignedAgent.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'broker' && client.assignedAgent.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this client' });
     }
 
@@ -76,7 +120,7 @@ const deleteClient = async (req, res) => {
     const client = await Client.findById(req.params.id);
     if (!client) return res.status(404).json({ message: 'Client not found' });
 
-    if (req.user.role === 'agent' && client.assignedAgent.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'broker' && client.assignedAgent.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this client' });
     }
 

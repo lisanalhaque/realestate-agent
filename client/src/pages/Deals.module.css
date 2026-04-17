@@ -175,3 +175,10 @@
   min-height: 4rem;
   resize: vertical;
 }
+
+.fieldHint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}

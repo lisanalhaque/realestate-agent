@@ -4,9 +4,12 @@ const { protect } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
+const { authorize } = require('../middleware/role.middleware');
+const upload = require('../middleware/multer');
+
 router.route('/')
   .get(protect, getProperties)
-  .post(protect, createProperty);
+  .post(protect, authorize('broker', 'admin'), upload.array('images', 5), createProperty);
 
 router.route('/:id')
   .get(protect, getPropertyById)

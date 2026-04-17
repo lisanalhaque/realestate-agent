@@ -10,6 +10,8 @@ const Commissions = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  const canUpdateCommissionStatus = user?.role === 'admin';
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -28,10 +30,12 @@ const Commissions = () => {
 
   useEffect(() => {
     fetchData();
+    const t = setInterval(fetchData, 60000);
+    return () => clearInterval(t);
   }, []);
 
   const handleStatusChange = async (id, newStatus) => {
-    if (user.role === 'agent') return; // Agents cannot change status
+    if (user?.role !== 'admin') return; // Only admin can change status
     try {
       await api.put(`/commissions/${id}/status`, { status: newStatus });
       fetchData(); // Refresh to update summary totals as well
@@ -101,7 +105,9 @@ const Commissions = () => {
               <FileText size={32} />
             </div>
             <h3 className="empty-title">No commissions yet</h3>
-            <p className="empty-subtitle">Close a deal to start generating commissions.</p>
+            <p className="empty-subtitle">
+              Move a negotiation to Deal done in the negotiation pipeline, or set a CRM deal to closed. Commissions book at 2.5% of the negotiated amount.
+            </p>
           </div>
         ) : (
           <div className={styles.tableContainer}>
@@ -109,7 +115,7 @@ const Commissions = () => {
               <thead>
                 <tr>
                   <th>Deal Reference</th>
-                  <th>Agent</th>
+                  {user?.role === 'admin' && <th>Agent</th>}
                   <th>Commission</th>
                   <th>Status</th>
                   <th>Date</th>
@@ -126,15 +132,17 @@ const Commissions = () => {
                         Value: {formatCurrency(comm.deal?.dealValue)} @ {comm.deal?.commissionRate}%
                       </div>
                     </td>
-                    <td className={styles.agentCell}>
-                      {comm.agent?.name || 'Unknown'}
+                    {user?.role === 'admin' && (
+                      <td className={styles.agentCell}>
+                        {comm.agent?.name || 'Unknown'}
+                      </td>
+                    )}
+                    <td>
+                      <div className={styles.commCell}>{formatCurrency(user?.role === 'admin' ? comm.adminShare : comm.agentShare)}</div>
+                      <div className={styles.commSubText}>Total {user?.role === 'admin' ? '(1% Admin Rate)' : 'Commission'}: {formatCurrency(comm.totalCommission)}</div>
                     </td>
                     <td>
-                      <div className={styles.commCell}>{formatCurrency(comm.agentShare)}</div>
-                      <div className={styles.commSubText}>Total: {formatCurrency(comm.totalCommission)}</div>
-                    </td>
-                    <td>
-                      {user.role === 'agent' ? (
+                      {!canUpdateCommissionStatus ? (
                         <span className={`badge ${styles.statusSelect} ${styles[comm.status]}`}>
                           {comm.status}
                         </span>

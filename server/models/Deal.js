@@ -4,6 +4,8 @@ const { calculateCommission } = require('../utils/commissionCalculator');
 const dealSchema = new mongoose.Schema({
   property: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
   client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
+  /** When set, negotiation pipeline stays in sync with this deal */
+  sourceBid: { type: mongoose.Schema.Types.ObjectId, ref: 'Bid', default: null },
   agent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   status: { 
     type: String, 

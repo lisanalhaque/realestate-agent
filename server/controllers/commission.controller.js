@@ -5,7 +5,10 @@ const Commission = require('../models/Commission');
 // @access  Private
 const getCommissions = async (req, res) => {
   try {
-    const filter = req.user.role === 'agent' ? { agent: req.user._id } : {};
+    const filter = {};
+    if (req.user.role === 'broker' || req.user.role === 'agent') {
+      filter.agent = req.user._id;
+    }
     const commissions = await Commission.find(filter)
       .populate('deal', 'dealValue commissionRate status closedAt')
       .populate('agent', 'name email');
@@ -20,16 +23,20 @@ const getCommissions = async (req, res) => {
 // @access  Private
 const getCommissionSummary = async (req, res) => {
   try {
-    const filter = req.user.role === 'agent' ? { agent: req.user._id } : {};
+    const filter = {};
+    if (req.user.role === 'broker' || req.user.role === 'agent') {
+      filter.agent = req.user._id;
+    }
     const commissions = await Commission.find(filter);
 
     const summary = commissions.reduce(
       (acc, curr) => {
-        acc.total += curr.agentShare;
+        const share = req.user.role === 'admin' ? (curr.adminShare || 0) : curr.agentShare;
+        acc.total += share;
         if (curr.status === 'paid') {
-          acc.paid += curr.agentShare;
+          acc.paid += share;
         } else {
-          acc.pending += curr.agentShare;
+          acc.pending += share;
         }
         return acc;
       },

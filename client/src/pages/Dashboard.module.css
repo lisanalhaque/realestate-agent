@@ -32,6 +32,8 @@
 .statIcon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 .statIcon.teal { background: rgba(13, 148, 136, 0.15); color: #14b8a6; }
 .statIcon.orange { background: rgba(234, 88, 12, 0.15); color: #f97316; }
+.statIcon.purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.statIcon.emerald { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 
 .statInfo {
   flex: 1;

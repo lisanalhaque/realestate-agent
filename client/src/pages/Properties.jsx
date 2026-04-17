@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, MapPin, Home as HomeIcon, Bed, Bath, Square, Trash2 } from 'lucide-react';
+import { Plus, MapPin, Home as HomeIcon, Bed, Bath, Square, Trash2, Phone } from 'lucide-react';
+import ImageCarousel from '../components/ImageCarousel';
 import styles from './Properties.module.css';
 
-const Properties = () => {
+const Properties = ({ brokerId }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -13,13 +14,14 @@ const Properties = () => {
   const [formData, setFormData] = useState({
     title: '', type: 'apartment', status: 'available', price: '', 
     location: { address: '', city: '', state: '', pincode: '' },
-    area: '', bedrooms: '', bathrooms: ''
+    area: '', bedrooms: '', bathrooms: '', contactNumber: '', images: null
   });
 
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/properties');
+      const url = brokerId ? `/properties?agentId=${brokerId}` : '/properties';
+      const res = await api.get(url);
       setProperties(res.data);
     } catch (error) {
       console.error('Failed to fetch properties', error);
@@ -45,14 +47,46 @@ const Properties = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.title || !formData.price || !formData.type) {
+      alert('Title, price, and property type are required parameters.');
+      return;
+    }
+    if (formData.contactNumber && !/^\d{10}$/.test(formData.contactNumber)) {
+      alert('If provided, phone number must be exactly 10 digits.');
+      return;
+    }
+    if (formData.location.pincode && !/^\d{6}$/.test(formData.location.pincode)) {
+      alert('If provided, pincode must be exactly 6 digits.');
+      return;
+    }
+
     try {
-      await api.post('/properties', formData);
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('type', formData.type);
+      data.append('status', formData.status);
+      data.append('price', formData.price);
+      if (formData.area) data.append('area', formData.area);
+      if (formData.bedrooms) data.append('bedrooms', formData.bedrooms);
+      if (formData.bathrooms) data.append('bathrooms', formData.bathrooms);
+      if (formData.contactNumber) data.append('contactNumber', formData.contactNumber);
+      data.append('location', JSON.stringify(formData.location));
+
+      if (formData.images) {
+        for (let i = 0; i < formData.images.length; i++) {
+          data.append('images', formData.images[i]);
+        }
+      }
+
+      await api.post('/properties', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setShowModal(false);
       fetchProperties();
       setFormData({
         title: '', type: 'apartment', status: 'available', price: '', 
         location: { address: '', city: '', state: '', pincode: '' },
-        area: '', bedrooms: '', bathrooms: ''
+        area: '', bedrooms: '', bathrooms: '', contactNumber: '', images: null
       });
     } catch (error) {
       console.error('Failed to create property', error);
@@ -102,13 +136,11 @@ const Properties = () => {
           {properties.map(property => (
             <div key={property._id} className={`card ${styles.propertyCard}`}>
               <div className={styles.imageContainer}>
-                {property.images && property.images.length > 0 ? (
-                  <img src={property.images[0]} alt={property.title} className={styles.propertyImage} />
-                ) : (
-                  <div className={styles.imagePlaceholder}>
-                    <HomeIcon size={48} />
-                  </div>
-                )}
+                <ImageCarousel 
+                  images={property.images} 
+                  title={property.title} 
+                  className={styles.propertyImage} 
+                />
                 <div className={styles.statusBadge}>
                   <span className={`badge ${getStatusClass(property.status)}`}>
                     {property.status.replace('_', ' ')}
@@ -127,21 +159,31 @@ const Properties = () => {
                 
                 <div className={styles.location}>
                   <MapPin size={16} className={styles.locationIcon} />
-                  <span className="truncate">{property.location?.city || 'No Location'}, {property.location?.state || ''}</span>
+                  <span className="truncate">
+                    {property.location?.address ? `${property.location.address}, ` : ''}
+                    {property.location?.city || 'No Location'}, {property.location?.state || ''} {property.location?.pincode || ''}
+                  </span>
                 </div>
+
+                {property.contactNumber && (
+                   <div className={styles.location} style={{ marginTop: '-0.5rem' }}>
+                    <Phone size={16} className={styles.locationIcon} />
+                    <span className="truncate">{property.contactNumber}</span>
+                  </div>
+                )}
                 
                 <div className={styles.featuresGrid}>
-                  <div className={styles.featureItem}>
+                  <div className={styles.featureItem} title="Bedrooms">
                     <Bed size={18} className={styles.featureIcon} />
                     <span className={styles.featureValue}>{property.bedrooms || '-'}</span>
                   </div>
-                  <div className={styles.featureItem}>
+                  <div className={styles.featureItem} title="Bathrooms">
                     <Bath size={18} className={styles.featureIcon} />
                     <span className={styles.featureValue}>{property.bathrooms || '-'}</span>
                   </div>
-                  <div className={styles.featureItem}>
+                  <div className={styles.featureItem} title="Area (sq.ft)">
                     <Square size={18} className={styles.featureIcon} />
-                    <span className={styles.featureValue}>{property.area || '-'}</span>
+                    <span className={styles.featureValue}>{property.area ? `${property.area} sq.ft` : '-'}</span>
                   </div>
                 </div>
 
@@ -172,18 +214,18 @@ const Properties = () => {
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="modal-body">
                 <div className={styles.formGrid}>
                   <div className={styles.fullWidth}>
                     <label className="form-label">Property Title *</label>
-                    <input required type="text" className="form-control" 
+                    <input type="text" className="form-control" 
                       value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                   </div>
                   
                   <div>
                     <label className="form-label">Price (₹) *</label>
-                    <input required type="number" className="form-control" 
+                    <input type="number" className="form-control" 
                       value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                   </div>
                   
@@ -247,6 +289,18 @@ const Properties = () => {
                           value={formData.bathrooms} onChange={e => setFormData({...formData, bathrooms: e.target.value})} />
                       </div>
                     </div>
+                  </div>
+
+                  <div className={styles.fullWidth} style={{ marginTop: '0.5rem' }}>
+                    <label className="form-label">Contact Number (Optional)</label>
+                    <input type="text" className="form-control" placeholder="Specific line for this property..."
+                      value={formData.contactNumber} onChange={e => setFormData({...formData, contactNumber: e.target.value})} />
+                  </div>
+
+                  <div className={styles.fullWidth}>
+                    <label className="form-label">Images</label>
+                    <input type="file" multiple accept="image/*" className="form-control" 
+                      onChange={e => setFormData({...formData, images: e.target.files})} />
                   </div>
                 </div>
               </div>
