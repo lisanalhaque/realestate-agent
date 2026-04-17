@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const OtpVerification = require('../models/OtpVerification');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -13,31 +14,28 @@ const registerUser = async (req, res) => {
 
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already registered.' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    
+    await OtpVerification.deleteMany({ email });
 
-    const user = await User.create({ 
-      name, email, password, role, phone, 
-      otp, otpExpires, isActive: false 
+    await OtpVerification.create({ 
+      name, email, password, role, phone, otp 
     });
 
-    if (user) {
-      const sendEmail = require('../utils/sendEmail');
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: 'Real Estate App - Verify your OTP',
-          text: `Your OTP for registration is ${otp}. It is valid for 10 minutes.`,
-        });
-      } catch (err) {
-        console.error("Email send failed:", err);
-      }
-      res.status(201).json({ message: 'User registered. Please verify OTP sent to email.' });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
+    const sendEmail = require('../utils/sendEmail');
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Real Estate App - Verify your OTP',
+        text: `Your OTP for registration is ${otp}. It is mathematically valid for exactly 2 minutes.`,
+      });
+      res.status(201).json({ message: 'Payload cached. Please verify OTP sent to email.' });
+    } catch (err) {
+      console.error("Email send failed:", err);
+      res.status(500).json({ message: 'Failed to send OTP email' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -47,16 +45,25 @@ const registerUser = async (req, res) => {
 const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email });
+    
+    const pendingUser = await OtpVerification.findOne({ email, otp });
+    
+    if (!pendingUser) {
+      return res.status(400).json({ message: 'Invalid or Expired OTP' });
+    }
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    if (user.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
-    if (user.otpExpires < new Date()) return res.status(400).json({ message: 'OTP expired' });
+    const isActive = pendingUser.role === 'broker' ? false : true;
 
-    user.isActive = user.role === 'broker' ? false : true;
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
+    const user = await User.create({
+      name: pendingUser.name,
+      email: pendingUser.email,
+      password: pendingUser.password,
+      role: pendingUser.role,
+      phone: pendingUser.phone,
+      isActive: isActive
+    });
+
+    await OtpVerification.deleteMany({ email });
 
     res.json({
       _id: user._id,

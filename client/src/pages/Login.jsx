@@ -349,11 +349,13 @@ const Login = () => {
 
           {!showOtp && !isForgotPassword && (
             <div className={styles.toggleContainer}>
-              <div style={{ marginBottom: '1rem' }}>
-                <button type="button" onClick={toggleForgotPassword} className={styles.toggleBtn}>
-                  Forgot Password?
-                </button>
-              </div>
+              {isLogin && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <button type="button" onClick={toggleForgotPassword} className={styles.toggleBtn}>
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button type="button" onClick={toggleMode} className={styles.toggleBtn}>
                 {isLogin ? 'Register Now' : 'Sign in here'}

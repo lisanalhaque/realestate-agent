@@ -90,7 +90,15 @@
 
 .bidDetails {
   display: flex;
-  gap: 3rem;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .bidDetails {
+    flex-direction: row;
+    gap: 3rem;
+  }
 }
 
 .detailCol {
