@@ -13,7 +13,7 @@ router.route('/')
 
 router.route('/:id')
   .get(protect, getPropertyById)
-  .put(protect, updateProperty)
-  .delete(protect, deleteProperty);
+  .put(protect, authorize('broker', 'admin'), upload.array('images', 5), updateProperty)
+  .delete(protect, authorize('broker', 'admin'), deleteProperty);
 
 module.exports = router;

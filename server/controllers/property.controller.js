@@ -105,7 +105,36 @@ const updateProperty = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this property' });
     }
 
-    const updatedProperty = await Property.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    let updateData = { ...req.body };
+    
+    // Parse location if it comes as a string due to FormData
+    if (typeof updateData.location === 'string') {
+      try {
+        updateData.location = JSON.parse(updateData.location);
+      } catch (e) {
+        console.warn('Failed to parse location on update:', updateData.location);
+        updateData.location = { address: updateData.location }; // Fallback
+      }
+    }
+
+    let uploadedImages = [...property.images];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'boomagent_properties'
+          });
+          uploadedImages.push(result.secure_url);
+          // Ephemeral cleanup
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        } catch (uploadError) {
+          console.error('Failed to upload image to Cloudinary during update:', uploadError);
+        }
+      }
+    }
+    updateData.images = uploadedImages;
+
+    const updatedProperty = await Property.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json(updatedProperty);
   } catch (error) {
     res.status(500).json({ message: error.message });

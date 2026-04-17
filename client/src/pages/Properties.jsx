@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, MapPin, Home as HomeIcon, Bed, Bath, Square, Trash2, Phone } from 'lucide-react';
+import { Plus, MapPin, Home as HomeIcon, Bed, Bath, Square, Trash2, Phone, Edit2 } from 'lucide-react';
 import ImageCarousel from '../components/ImageCarousel';
 import styles from './Properties.module.css';
 
@@ -10,6 +10,7 @@ const Properties = ({ brokerId }) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const { user } = useAuth();
+  const [editingPropertyId, setEditingPropertyId] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '', type: 'apartment', status: 'available', price: '', 
@@ -45,6 +46,28 @@ const Properties = ({ brokerId }) => {
     }
   };
 
+  const handleEditOpen = (property) => {
+    setEditingPropertyId(property._id);
+    setFormData({
+      title: property.title || '',
+      type: property.type || 'apartment',
+      status: property.status || 'available',
+      price: property.price || '',
+      location: {
+        address: property.location?.address || '',
+        city: property.location?.city || '',
+        state: property.location?.state || '',
+        pincode: property.location?.pincode || ''
+      },
+      area: property.area || '',
+      bedrooms: property.bedrooms || '',
+      bathrooms: property.bathrooms || '',
+      contactNumber: property.contactNumber || '',
+      images: null
+    });
+    setShowModal(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.price || !formData.type) {
@@ -78,10 +101,18 @@ const Properties = ({ brokerId }) => {
         }
       }
 
-      await api.post('/properties', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      if (editingPropertyId) {
+        await api.put(`/properties/${editingPropertyId}`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        await api.post('/properties', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+      
       setShowModal(false);
+      setEditingPropertyId(null);
       fetchProperties();
       setFormData({
         title: '', type: 'apartment', status: 'available', price: '', 
@@ -114,7 +145,15 @@ const Properties = ({ brokerId }) => {
           <h1 className="page-title">Properties</h1>
           <p className="page-subtitle">Manage your real estate listings</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
+        <button onClick={() => {
+          setEditingPropertyId(null);
+          setFormData({
+            title: '', type: 'apartment', status: 'available', price: '', 
+            location: { address: '', city: '', state: '', pincode: '' },
+            area: '', bedrooms: '', bathrooms: '', contactNumber: '', images: null
+          });
+          setShowModal(true);
+        }} className="btn-primary">
           <Plus size={20} /> Add Property
         </button>
       </div>
@@ -191,13 +230,24 @@ const Properties = ({ brokerId }) => {
                   <div className={styles.dateAdded}>
                     Added <span className={styles.dateValue}>{new Date(property.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <button 
-                    onClick={() => handleDelete(property._id)}
-                    className="btn-icon danger"
-                    title="Delete property"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div style={{display: 'flex', gap: '0.5rem'}}>
+                    {(user?.role === 'admin' || (user?.role === 'broker' && (!property.listedBy || property.listedBy._id === user._id || property.listedBy === user._id))) && (
+                      <button 
+                        onClick={() => handleEditOpen(property)}
+                        className="btn-icon"
+                        title="Edit property text details"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => handleDelete(property._id)}
+                      className="btn-icon danger"
+                      title="Delete property"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -210,7 +260,7 @@ const Properties = ({ brokerId }) => {
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-content" style={{maxWidth: '42rem'}}>
             <div className="modal-header">
-              <h2 className="modal-title">Add New Property</h2>
+              <h2 className="modal-title">{editingPropertyId ? 'Edit Property' : 'Add New Property'}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>&times;</button>
             </div>
             
@@ -310,7 +360,7 @@ const Properties = ({ brokerId }) => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  Save Property
+                  {editingPropertyId ? 'Update Property' : 'Save Property'}
                 </button>
               </div>
             </form>
