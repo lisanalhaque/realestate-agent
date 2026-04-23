@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { Shield, Trash2, Check, X } from 'lucide-react';
 import styles from './Clients.module.css';
@@ -6,6 +7,7 @@ import styles from './Clients.module.css';
 const AdminBrokers = () => {
   const [brokers, setBrokers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchBrokers = async () => {
     try {
@@ -75,7 +77,7 @@ const AdminBrokers = () => {
                   </span>
                 </td>
                 <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '16px' }}>
-                  <button onClick={() => window.location.href = `/admin/brokers/${b._id}/dashboard`} className="btn-primary" style={{ padding: '6px 12px' }}>View Portal</button>
+                  <button onClick={() => navigate(`/admin/brokers/${b._id}/dashboard`)} className="btn-primary" style={{ padding: '6px 12px' }}>View Portal</button>
                   {!b.isActive ? (
                     <button onClick={() => handleStatus(b._id, true)} className="btn-success" style={{ padding: '6px 12px' }}><Check size={16} /> Accept</button>
                   ) : (
