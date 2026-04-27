@@ -127,7 +127,7 @@ const UserBids = () => {
                             Processing…
                           </>
                         ) : (
-                          'Pay ₹100 Advance'
+                          'Pay ₹40,000 Flat Fee'
                         )}
                       </button>
                     )}

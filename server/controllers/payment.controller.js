@@ -104,21 +104,20 @@ exports.createPaymentIntent = async (req, res) => {
       return res.status(400).json({ message: 'Invalid proposed amount' });
     }
 
-    // Flat advance payment of ₹100 for all properties for Razorpay test clearance
-    const advanceAmount = 100;
+    // Flat advance payment of ₹40,000 for all properties
+    const advanceAmount = 40000;
     const amountPaise = advanceAmount * 100;
 
     let order;
 
     const forceDemo =
       process.env.PAYMENTS_FORCE_DEMO === 'true' || process.env.PAYMENTS_FORCE_DEMO === '1';
+    
+    // Enable demo fallback by default unless explicitly disabled, ensuring Vercel deployments
+    // don't completely break for users if their Razorpay keys are invalid.
     const fb = process.env.RAZORPAY_DEMO_FALLBACK;
-    const demoFallbackExplicitOn = fb === 'true' || fb === '1';
     const demoFallbackExplicitOff = fb === 'false' || fb === '0';
-    // Local dev: if Razorpay keys are wrong, still allow demo checkout unless explicitly disabled.
-    const demoFallback =
-      demoFallbackExplicitOn ||
-      (!demoFallbackExplicitOff && process.env.NODE_ENV !== 'production');
+    const demoFallback = !demoFallbackExplicitOff;
 
     if (razorpay && !forceDemo) {
       const bidIdStr = String(bid._id);
@@ -180,7 +179,7 @@ exports.verifyPayment = async (req, res) => {
       console.log('Demo payment verified successfully');
       bid.advancePaymentDetails = {
         transactionId: razorpay_payment_id || `demo_${Date.now()}`,
-        paidAmount: 100,
+        paidAmount: 40000,
         status: 'completed',
         isDemoMode: true,
         paidAt: new Date(),
@@ -204,7 +203,7 @@ exports.verifyPayment = async (req, res) => {
     if (razorpay_signature === expectedSign) {
       bid.advancePaymentDetails = {
         transactionId: razorpay_payment_id,
-        paidAmount: 100,
+        paidAmount: 40000,
         status: 'completed',
         paidAt: new Date(),
       };
