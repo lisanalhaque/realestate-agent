@@ -107,9 +107,26 @@ async function ensureClosedDealAndCommissionForBid(bidId) {
 async function upsertCommissionForClosedDeal(deal) {
   if (deal.status !== 'closed') return;
 
-  // Auto-flag the linked property as sold
+  // Auto-flag the linked property as sold and cancel other bids
   if (deal.property) {
     await Property.findByIdAndUpdate(deal.property, { status: 'sold', soldAt: new Date() });
+    
+    // Cancel all other active negotiations for this property
+    const filter = { propertyId: deal.property };
+    if (deal.sourceBid) {
+      filter._id = { $ne: deal.sourceBid };
+    }
+    await Bid.updateMany(
+      filter,
+      { 
+        $set: { 
+          status: 'rejected', 
+          pipelineStage: 'deal_cancelled',
+          notes: 'Property has been sold to another buyer.',
+          lastUpdated: new Date()
+        } 
+      }
+    );
   }
 
   const { total, agentShare, adminShare } = calculateCommission(

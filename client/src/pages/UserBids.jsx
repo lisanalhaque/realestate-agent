@@ -100,6 +100,8 @@ const UserBids = () => {
                     <span className={styles.label}>Advance Payment</span>
                     {bid.advancePaymentDetails?.status === 'completed' ? (
                       <span className={styles.value} style={{color: '#10b981'}}>✓ Paid</span>
+                    ) : bid.propertyId?.status === 'sold' && bid.pipelineStage !== 'deal_done' ? (
+                      <span className={styles.value} style={{color: '#ef4444'}}>Sold to another buyer</span>
                     ) : (
                       <button
                         type="button"
@@ -125,10 +127,16 @@ const UserBids = () => {
                             Processing…
                           </>
                         ) : (
-                          'Pay 10% Advance'
+                          'Pay ₹100 Advance'
                         )}
                       </button>
                     )}
+                  </div>
+                )}
+                {bid.status === 'rejected' && bid.notes && (
+                  <div className={styles.detailCol} style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
+                    <span className={styles.label}>Note</span>
+                    <span className={styles.value} style={{ color: '#ef4444' }}>{bid.notes}</span>
                   </div>
                 )}
               </div>

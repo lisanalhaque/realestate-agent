@@ -12,6 +12,9 @@ exports.createBid = async (req, res) => {
     const { propertyId, amount } = req.body;
     const property = await Property.findById(propertyId);
     if (!property) return res.status(404).json({ message: 'Property not found' });
+    if (property.status === 'sold') {
+      return res.status(400).json({ message: 'This property has already been sold' });
+    }
 
     const newBid = await Bid.create({
       propertyId,

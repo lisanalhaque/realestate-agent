@@ -38,6 +38,11 @@ function assertCanPayBid(req, bid) {
   if (bid.advancePaymentDetails?.status === 'completed') {
     return { status: 400, message: 'Advance payment already completed for this negotiation' };
   }
+  
+  if (bid.propertyId && bid.propertyId.status === 'sold' && bid.pipelineStage !== 'deal_done') {
+    return { status: 400, message: 'This property has already been sold to another buyer' };
+  }
+
   if (req.user.role === 'admin') return null;
   const ownerId = bid.userId?.toString?.() || String(bid.userId);
   const userId = req.user._id?.toString?.() || String(req.user._id);
@@ -99,8 +104,8 @@ exports.createPaymentIntent = async (req, res) => {
       return res.status(400).json({ message: 'Invalid proposed amount' });
     }
 
-    // Advance payment (10% of bid), minimum ₹1 (100 paise) for Razorpay
-    const advanceAmount = Math.max(1, Math.round(bidAmount * 0.1));
+    // Flat advance payment of ₹100 for all properties for Razorpay test clearance
+    const advanceAmount = 100;
     const amountPaise = advanceAmount * 100;
 
     let order;
@@ -175,7 +180,7 @@ exports.verifyPayment = async (req, res) => {
       console.log('Demo payment verified successfully');
       bid.advancePaymentDetails = {
         transactionId: razorpay_payment_id || `demo_${Date.now()}`,
-        paidAmount: Math.round(bid.amount * 0.10),
+        paidAmount: 100,
         status: 'completed',
         isDemoMode: true,
         paidAt: new Date(),
@@ -199,7 +204,7 @@ exports.verifyPayment = async (req, res) => {
     if (razorpay_signature === expectedSign) {
       bid.advancePaymentDetails = {
         transactionId: razorpay_payment_id,
-        paidAmount: Math.round(bid.amount * 0.10),
+        paidAmount: 100,
         status: 'completed',
         paidAt: new Date(),
       };

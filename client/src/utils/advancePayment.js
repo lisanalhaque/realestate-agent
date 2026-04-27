@@ -54,7 +54,7 @@ export async function runAdvancePayment(bid, { onSuccess, onBusyChange } = {}) {
     const isDemoMode = String(orderId).startsWith('demo_order_');
 
     if (isDemoMode) {
-      const advance = data.advanceAmount ?? Math.round(Number(bid.amount) * 0.1);
+      const advance = data.advanceAmount ?? 100;
       const confirmed = window.confirm(
         `Demo Payment Confirmation\n\nProperty: ${bid.propertyId?.title || 'Property'}\nAdvance Amount: ₹${advance}\n\nClick OK to confirm demo payment.`
       );

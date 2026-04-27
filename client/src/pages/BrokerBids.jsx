@@ -191,9 +191,9 @@ const BrokerBids = () => {
                   </span>
                 </div>
                 <div className={styles.detailCol}>
-                  <span className={styles.label}>Advance (10%)</span>
+                  <span className={styles.label}>Advance</span>
                   <span className={styles.value} style={{ color: '#3b82f6', fontWeight: 'bold' }}>
-                    {formatCurrency(bid.amount * 0.1)}
+                    {formatCurrency(100)}
                   </span>
                 </div>
                 <div className={styles.detailCol}>
