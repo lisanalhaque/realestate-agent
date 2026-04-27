@@ -110,12 +110,13 @@ exports.createPaymentIntent = async (req, res) => {
 
     let order;
 
-    const forceDemo = process.env.PAYMENTS_FORCE_DEMO === 'true' || process.env.PAYMENTS_FORCE_DEMO === '1';
+    // Force demo mode constantly for testing regardless of .env settings
+    const forceDemo = true;
     
-    // Respect demo fallback explicit off; only fallback if specifically set to true OR implicitly if keys are missing
+    // Respect demo fallback
     const fb = process.env.RAZORPAY_DEMO_FALLBACK;
     const demoFallbackExplicitOn = fb === 'true' || fb === '1';
-    const demoFallback = demoFallbackExplicitOn;
+    const demoFallback = demoFallbackExplicitOn || forceDemo;
 
     if (razorpay && !forceDemo) {
       const bidIdStr = String(bid._id);
